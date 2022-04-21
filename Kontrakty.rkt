@@ -14,11 +14,19 @@
 ;Poniższa procedura ma za zadanie obliczyć listę wszystkich podlist listy podanej jako
 ;argument:
 ( define/contract ( sublists xs)
-   (-> list list)
+   (parametric->/c [a](-> (listof a) (listof a) ) )
    (if ( null? xs)
        ( list null )
        (if (empty? (cdr xs)) xs (cons xs
          ( sublists (cdr xs))))))
+
+( define/contract ( sublists-bad xs)
+   (-> list list ) 
+   (if (null? (cdr xs) )
+       (car xs)
+       ( append-map
+         ( lambda (ys) ( cons ( cons ( car xs) ys) ys))
+         ( sublists (cdr xs)))))
 ;Niestety, procedura ta zawiera błąd:
 ;> ( sublists '(1 2))
 ;'((1 2) 2)
@@ -46,10 +54,83 @@
 ( parametric->/c [a b c] (-> (-> a b c) (-> a b) a c))
   (a (b c) )
   )
-(define/contract (5c a b )
+(define/contract (5c f g )
 ( parametric->/c [a b c] (-> (-> b c) (-> a b) (-> a c)))
-  (a b))
-(define/contract (5d a b)
-( parametric->/c [a] (-> (-> (-> a a) a) a))
-  b
+  (lambda (x) (f (g x)))
   )
+(define/contract (5d f);;WIP
+( parametric->/c [a] (-> (-> (-> a a) a) a))
+  (lambda (x) (x (x x)))
+  )
+
+;kod z wykładu
+;========================================================
+(require rackunit)
+
+;(define (fact n)
+;  (if (natural? n)
+;      (if (= n 0)
+;          1
+;          (* n (fact (- n 1))))
+;      (error 'fact "Niepoprawne dane wejściowe")))
+
+;(define (fact n)
+;  (check-pred natural? n)
+;  (if (= n 0)
+;      1
+;      (* n (fact (- n 1)))))
+
+(define positive-natural/c
+  (and/c natural? positive?))
+
+(define/contract (fact n)
+  (-> natural? positive-natural/c)
+  (if (= n 0)
+      1
+      (* n (fact (- n 1)))))
+
+(define/contract (filter p? xs)
+  (parametric->/c [a] (-> (-> a boolean?) (listof a) (listof a)))
+  (match xs
+    ['()   null]
+    [(cons x xs)
+       (if (p? x)
+           (cons x (filter p? xs))
+           (filter p? xs))]))
+
+(define/contract (map f xs)
+  (parametric->/c [a b] (-> (-> a b) (listof a) (listof b)))
+  (match xs
+    ['() null]
+    [(cons x xs) (cons (f x) (map f xs))]))
+
+(define/contract (bad-id x)
+  (parametric->/c [a] (-> a any/c))
+  x)
+
+; ==================================================================
+
+(struct leaf () #:transparent)
+(struct node (l elem r) #:transparent)
+
+(define (tree? t)
+  (or (leaf? t)
+      (and (node? t) (tree? (node-l t)) (tree? (node-r t)))))
+
+(define (bad-treeof c)
+  (or/c (struct/c leaf)
+        (struct/c node (bad-treeof c) c (bad-treeof c))))
+
+(define (treeof c)
+  (flat-rec-contract tree
+                     (struct/c leaf)
+                     (struct/c node tree c tree)))
+
+(define/contract (insert x t)
+  (-> number? (treeof number?) (treeof number?))
+  (match t
+    [(leaf)       (node (leaf) x (leaf))]
+    [(node l y r)
+       (if (< x y)
+           (node (insert x l) y r)
+           (node l y (insert x r)))]))
