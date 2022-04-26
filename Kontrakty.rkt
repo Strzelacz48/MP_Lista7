@@ -1,4 +1,4 @@
-S#lang racket
+#lang racket
 ;zad 3
 ;Napisz procedurę suffixes, zwracającą wszystkie sufiksy listy podanej jako argument.
 ;Napisz dla tej procedury odpowiedni kontrakt parametryczny.
@@ -13,20 +13,20 @@ S#lang racket
 ;Zadanie 4. (2 pkt)
 ;Poniższa procedura ma za zadanie obliczyć listę wszystkich podlist listy podanej jako
 ;argument:
-( define/contract ( sublists xs)
+( define/contract ( sublistsa xs)
    (parametric->/c [a](-> (listof a) (listof a) ) )
    (if ( null? xs)
        ( list null )
        (if (empty? (cdr xs)) xs (cons xs
          ( sublists (cdr xs))))))
 
-( define/contract ( sublists-bad xs)
-   (-> list list ) 
-   (if (null? (cdr xs) )
-       (car xs)
-       ( append-map
-         ( lambda (ys) ( cons ( cons ( car xs) ys) ys))
-         ( sublists (cdr xs)))))
+( define ( sublists xs )
+   (parametric->/c [a](-> (listof a) (listof a) ) )
+   ( if ( null? xs )
+        ( list null )
+        ( append-map
+          ( lambda ( ys ) ( list ( cons ( car xs ) ys ) ys ) )
+          ( sublists ( cdr xs ) ) ) ) )
 ;Niestety, procedura ta zawiera błąd:
 ;> ( sublists '(1 2))
 ;'((1 2) 2)
@@ -47,21 +47,24 @@ S#lang racket
   #t
   )
 (define/contract (5a a b)
-( parametric->/c [a b] (-> a b a))
+( parametric->/c [a b] (-> a b a)) ;oba negatywne
   a
   )
 (define/contract (5b a b c)
-( parametric->/c [a b c] (-> (-> a b c) (-> a b) a c))
+( parametric->/c [a b c] (-> (-> a b c) (-> a b) a c)) ;a - negatywne, b - negatywne, c - negatywne
   (a (b c) )
   )
 (define/contract (5c f g )
-( parametric->/c [a b c] (-> (-> b c) (-> a b) (-> a c)))
+( parametric->/c [a b c] (-> (-> b c) (-> a b) (-> a c))); a - 3 razy negatywne,b 3 razy negatywne, c negatywne
   (lambda (x) (f (g x)))
   )
-(define/contract (5d f);;WIP
-( parametric->/c [a] (-> (-> (-> a a) a) a))
+(define/contract (5d f)
+( parametric->/c [a] (-> (-> (-> a a) a) a));a - 6
   (lambda (x) (x (x x)))
   )
+
+
+
 
 ;kod z wykładu
 ;========================================================
