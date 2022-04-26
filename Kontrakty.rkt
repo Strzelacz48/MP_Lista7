@@ -51,7 +51,7 @@
   a
   )
 (define/contract (5b a b c)
-( parametric->/c [a b c] (-> (-> a b c) (-> a b) a c)) ;a - negatywne, b - negatywne, c - negatywne
+( parametric->/c [a b c] (-> (-> a b c) (-> a b) a c)) ;a -5 negatywne, b -3 negatywne, c - negatywne
   (a (b c) )
   )
 (define/contract (5c f g )
@@ -64,7 +64,29 @@
   )
 
 
-
+;Zadanie 6. (2 pkt)
+;Poniższy kod implementuje procedurę łączącą w sobie cechy foldl i map :
+( define ( foldl-map f a xs )
+   (parametric->/c [a acc c] (-> (-> a acc (cons/c c acc)) acc (listof a)
+                              (cons/c (listof c) acc)))
+   ( define ( it a xs ys )
+      ( if ( null? xs )
+           ( cons ( reverse ys ) a )
+           ( let [( p ( f ( car xs ) a ) ) ]
+              ( it ( cdr p )
+                   ( cdr xs )
+                   ( cons ( car p ) ys ) ) ) ) )
+   ( it a xs null ) )
+;Pierwszy argument powinien być procedurą przyjmującą dwa argumenty, oznaczające
+;(w kolejności) bieżący element listy oraz bieżący akumulator, zaś zwracającą parę
+;złożoną z nowego elementu listy oraz nowej wartości akumulatora. Pozostałe dwa
+;argumenty powinny zawierać startową wartość akumulatora oraz listę elementów do
+;przetworzenia. Procedura foldl-map zwraca parę złożoną z listy wynikowej i końcowej
+;wartości akumulatora.
+;Przykładowe wywołanie procedury, obliczające sumy częściowe:
+( foldl-map ( lambda ( x a ) ( cons a (+ a x ) ) ) 0 '(1 2 3) )
+;Napisz kontrakt parametryczny dla tej definicji. Zastosuj w kontrakcie jak najwięcej
+;(prawidłowo użytych) parametrów.
 
 ;kod z wykładu
 ;========================================================
